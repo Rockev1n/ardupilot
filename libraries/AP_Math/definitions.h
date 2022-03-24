@@ -80,7 +80,7 @@ static const double WGS84_E = (sqrt(2 * WGS84_F - WGS84_F * WGS84_F));
 #define KM_PER_HOUR_TO_M_PER_SEC 0.27777778f
 
 // Gas Constant is from Aerodynamics for Engineering Students, Third Edition, E.L.Houghton and N.B.Carruthers
-#define ISA_GAS_CONSTANT 287.26f
+#define ISA_GAS_CONSTANT 287.26f     //ISA 国际标准大气压
 #define ISA_LAPSE_RATE 0.0065f
 
 // Standard Sea Level values

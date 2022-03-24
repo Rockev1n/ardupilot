@@ -132,7 +132,7 @@ AP_RollController::AP_RollController(AP_AHRS &ahrs, const AP_Vehicle::FixedWing 
 int32_t AP_RollController::_get_rate_out(float desired_rate, float scaler, bool disable_integrator, bool ground_mode)
 {
     const float dt = AP::scheduler().get_loop_period_s();
-    const float eas2tas = _ahrs.get_EAS2TAS();
+    const float eas2tas = _ahrs.get_EAS2TAS();//eas2tas=ρRT/P
     bool limit_I = fabsf(_last_out) >= 45;
     float rate_x = _ahrs.get_gyro().x;
     float aspeed;
@@ -145,7 +145,7 @@ int32_t AP_RollController::_get_rate_out(float desired_rate, float scaler, bool 
     }
     bool underspeed = aspeed <= float(aparm.airspeed_min);
     if (underspeed) {
-        limit_I = true;
+        limit_I = true;//如果空速太低，会设置积分抗饱和
     }
 
     // the P and I elements are scaled by sq(scaler). To use an
@@ -153,20 +153,22 @@ int32_t AP_RollController::_get_rate_out(float desired_rate, float scaler, bool 
     //
     // note that we run AC_PID in radians so that the normal scaling
     // range for IMAX in AC_PID applies (usually an IMAX value less than 1.0)
+    //P、I参数由square(scaler)进行缩放，我们分别缩放输入和前馈增益
     rate_pid.update_all(radians(desired_rate) * scaler * scaler, rate_x * scaler * scaler, limit_I);
 
     if (underspeed) {
-        // when underspeed we lock the integrator
+        // when underspeed we lock the integrator当速度过低时，我们让积分器保持不变
         rate_pid.set_integrator(old_I);
     }
     
     // FF should be scaled by scaler/eas2tas, but since we have scaled
     // the AC_PID target above by scaler*scaler we need to instead
     // divide by scaler*eas2tas to get the right scaling
+    //前馈增益*目标值FF由scaler/eas2tas进行缩放，但由于我们在上面已经对目标值进行了scaler*scaler的缩放，所以需要除以sacler*eas2tas
     const float ff = degrees(rate_pid.get_ff() / (scaler * eas2tas));
 
     if (disable_integrator) {
-        rate_pid.reset_I();
+        rate_pid.reset_I();//禁止积分，让积分器_integrator = 0.0
     }
 
     // convert AC_PID info object to same scale as old controller
@@ -207,7 +209,7 @@ int32_t AP_RollController::_get_rate_out(float desired_rate, float scaler, bool 
  A positive demand is up
  Inputs are: 
  1) desired roll rate in degrees/sec
- 2) control gain scaler = scaling_speed / aspeed
+ 2) control gain scaler = scaling_speed / aspeed   这里的scaler=scaling_speed / aspeed是经过低通滤波器之后得到的
 */
 int32_t AP_RollController::get_rate_out(float desired_rate, float scaler)
 {
@@ -231,7 +233,7 @@ int32_t AP_RollController::get_servo_out(int32_t angle_err, float scaler, bool d
 	
     // Calculate the desired roll rate (deg/sec) from the angle error
     angle_err_deg = angle_err * 0.01;
-    float desired_rate = angle_err_deg/ gains.tau;
+    float desired_rate = angle_err_deg/ gains.tau;//φ_dot_ref=φ_err/t
 
     // Limit the demanded roll rate
     if (gains.rmax_pos && desired_rate < -gains.rmax_pos) {

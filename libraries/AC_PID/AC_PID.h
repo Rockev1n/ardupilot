@@ -153,7 +153,7 @@ protected:
     float _target;            // target value to enable filtering
     float _error;             // error value to enable filtering
     float _derivative;        // derivative value to enable filtering
-    int8_t _slew_limit_scale;
+    int8_t _slew_limit_scale;//压摆限制缩放
 
     AP_Logger::PID_Info _pid_info;
 };

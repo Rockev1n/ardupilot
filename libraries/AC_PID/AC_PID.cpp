@@ -93,7 +93,7 @@ AC_PID::AC_PID(float initial_p, float initial_i, float initial_d, float initial_
 
     // slew limit scaler allows for plane to use degrees/sec slew
     // limit
-    _slew_limit_scale = 1;
+    _slew_limit_scale = 1;//slew_rate_limite 压摆率限制
 }
 
 // set_dt - set time step in seconds
@@ -128,9 +128,13 @@ void AC_PID::slew_limit(float smax)
 }
 
 //  update_all - set target and measured inputs to PID controller and calculate outputs
+//将期望值和实际值输入到PID控制器，计算输出
 //  target and error are filtered
+//期望和误差已经被过滤
 //  the derivative is then calculated and filtered
+//  然后计算并过滤微分
 //  the integral is then updated based on the setting of the limit flag
+//然后根据 是否限制积分器的标准，更新积分
 float AC_PID::update_all(float target, float measurement, bool limit)
 {
     // don't process inf or NaN
@@ -146,10 +150,12 @@ float AC_PID::update_all(float target, float measurement, bool limit)
         _derivative = 0.0f;
     } else {
         float error_last = _error;
-        _target += get_filt_T_alpha() * (target - _target);
+        //计算经过低通滤波器的期望和误差
+        _target += get_filt_T_alpha() * (target - _target);//低通滤波  _target[n+1]=(1-α)_target[n]+α*target
         _error += get_filt_E_alpha() * ((_target - measurement) - _error);
 
         // calculate and filter derivative
+        //计算经过低通滤波器的微分
         if (_dt > 0.0f) {
             float derivative = (_error - error_last) / _dt;
             _derivative += get_filt_D_alpha() * (derivative - _derivative);
@@ -157,7 +163,7 @@ float AC_PID::update_all(float target, float measurement, bool limit)
     }
 
     // update I term
-    update_i(limit);
+    update_i(limit);//计算_integrator
 
     float P_out = (_error * _kp);
     float D_out = (_derivative * _kd);
@@ -233,10 +239,12 @@ float AC_PID::update_error(float error, bool limit)
 
 //  update_i - update the integral
 //  If the limit flag is set the integral is only allowed to shrink
+//如果积分限制标准有效（limit==ture），则积分只允许被缩小
 void AC_PID::update_i(bool limit)
 {
     if (!is_zero(_ki) && is_positive(_dt)) {
         // Ensure that integrator can only be reduced if the output is saturated
+        //确保只有在输出饱和时才能减少积分器。如果设置了积分限制，则只允许减少积分器，如果没有设置积分限制，则正常积分。
         if (!limit || ((is_positive(_integrator) && is_negative(_error)) || (is_negative(_integrator) && is_positive(_error)))) {
             _integrator += ((float)_error * _ki) * _dt;
             _integrator = constrain_float(_integrator, -_kimax, _kimax);

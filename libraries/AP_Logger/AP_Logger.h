@@ -340,7 +340,7 @@ public:
         float I;
         float D;
         float FF;
-        float Dmod;
+        float Dmod;//微分修正
         float slew_rate;
         bool  limit;
     };

@@ -13,7 +13,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
-  The SlewLimiter filter provides an actuator slew rate limiter for
+  The SlewLimiter filter(一个限制信号最大变化速率的滤波器) provides an actuator slew rate limiter for
   PID controllers. It is used to reduce the P and D gains when the
   filter detects that the P+D components are pushing the actuator
   beyond the configured actuator rate limit. This can prevent
@@ -38,7 +38,7 @@ SlewLimiter::SlewLimiter(const float &_slew_rate_max, const float &_slew_rate_ta
   apply filter to sample, returning multiplier between 0 and 1 to keep
   output within slew rate
  */
-float SlewLimiter::modifier(float sample, float dt)
+float SlewLimiter::modifier(float sample, float dt)//sample=P+D
 {
     if (slew_rate_max <= 0) {
         _output_slew_rate = 0.0;
@@ -46,13 +46,13 @@ float SlewLimiter::modifier(float sample, float dt)
     }
 
     // Calculate a low pass filtered slew rate
-    const float slew_rate = slew_filter.apply((sample - last_sample) / dt, dt);
+    const float slew_rate = slew_filter.apply((sample - last_sample) / dt, dt);//(P+D)的微分经过低通滤波得到slew_rate
     last_sample = sample;
 
     uint32_t now_ms = AP_HAL::millis();
-    const float decay_alpha = fminf(dt, slew_rate_tau) / slew_rate_tau;
+    const float decay_alpha = fminf(dt, slew_rate_tau) / slew_rate_tau;//fminf(x,y)返回两个浮点参数中的较小者，将NaN视为缺失数据
 
-    // Store a series of positive slew rate exceedance events
+    // Store a series of positive slew rate exceedance events   正压摆率超出的情况
     if (!_pos_event_stored && slew_rate > slew_rate_max) {
         if (_pos_event_index >= N_EVENTS) {
             _pos_event_index = 0;
@@ -74,7 +74,7 @@ float SlewLimiter::modifier(float sample, float dt)
         _pos_event_stored = false;
     }
 
-    // Find the oldest event time
+    // Find the oldest event time  查找压摆率最早一次超出的时间
     uint32_t oldest_ms = now_ms;
     for (uint8_t index = 0; index < N_EVENTS; index++) {
         if (_pos_event_ms[index] < oldest_ms) {
@@ -87,6 +87,7 @@ float SlewLimiter::modifier(float sample, float dt)
 
     // Decay the peak positive and negative slew rate if they are outside the window
     // Never drop PID gains below 10% of configured value
+    //如果时间超出预期的最慢振荡频率的半个周期所需的时间（以毫秒为单位），则衰减峰值正负压摆率 切勿将 PID 增益降至配置值的 10% 以下
     if (slew_rate > _max_pos_slew_rate) {
         _max_pos_slew_rate = fminf(slew_rate, 10.0f * slew_rate_max);
         _max_pos_slew_event_ms = now_ms;
@@ -103,17 +104,19 @@ float SlewLimiter::modifier(float sample, float dt)
 
     const float raw_slew_rate = 0.5f*(_max_pos_slew_rate + _max_neg_slew_rate);
 
-    // Apply a further reduction when the oldest exceedance event falls outside the window rewuired for the
-    // specified number of exceedance events. This prevents spikes due to control mode changed, etc causing
-    // unwanted gain reduction and is only applied to the slew rate used for gain reduction
+    /* Apply a further reduction when the oldest exceedance event falls outside the window rewuired for the
+     specified number of exceedance events. This prevents spikes due to control mode changed, etc causing
+     unwanted gain reduction and is only applied to the slew rate used for gain reduction
+    */
     float modifier_input = raw_slew_rate;
     if (now_ms - oldest_ms > (N_EVENTS + 1) * WINDOW_MS) {
         const float oldest_time_from_window = 0.001f*(float)(now_ms - oldest_ms - (N_EVENTS + 1) * WINDOW_MS);
         modifier_input *= expf(-oldest_time_from_window / slew_rate_tau);
     }
 
-    // Apply a filter to increases in slew rate only to reduce the effect of gusts and large controller
-    // setpoint changeschanges
+    /* Apply a filter to increases in slew rate only to reduce the effect of gusts and large controller
+     setpoint changeschanges
+    */
     const float attack_alpha = fminf(2.0f * decay_alpha, 1.0f);
 
     _modifier_slew_rate = (1.0f - attack_alpha) * _modifier_slew_rate + attack_alpha * modifier_input;

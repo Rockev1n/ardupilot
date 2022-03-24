@@ -389,10 +389,19 @@ Vector3F get_vel_correction_for_sensor_offset(const Vector3F &sensor_offset_bf, 
 
 /*
   calculate a low pass filter alpha value
+  低通滤波器：a为截至频率（这里说的cutoff frequence实际上为带宽频率）
+  y(s)=[a/(s+a)]u(s)    L（0）=1，L(a)=|a/(a^2+a^2)^0.5|=0.707
+  y_dot=-ay+au
+  y[n+1]=exp(-aT)y[n]+(1-exp(-aT))u[n]
+  这里令alpha_LPF=1-exp(-aT)
+  y[n+1]= （1-alpha_LPF）*y[n]+alpha_LPF*u[n]
+  于是alpha_LPF=1-exp(-aT)约等于alpha_LPF=aT/(1+aT),a为截至频率，w(rad/s)=a，T为采样周期，则alpha_LPF=wT/(1+wT)
+  w=2*pi*f，alpha_LPF=T/(1/w+T)=T/(1/(2*pi*f)+T)
+  在这里rc=1/(2*pi*f),dt=T
  */
 float calc_lowpass_alpha_dt(float dt, float cutoff_freq)
 {
-    if (dt <= 0.0f || cutoff_freq <= 0.0f) {
+    if (dt <= 0.0f || cutoff_freq <= 0.0f) {//此时，y[n+1]=y[n]
         return 1.0;
     }
     float rc = 1.0f/(M_2PI*cutoff_freq);

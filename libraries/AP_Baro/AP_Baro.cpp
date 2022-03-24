@@ -395,8 +395,12 @@ float AP_Baro::get_EAS2TAS(void)
     // only estimate lapse rate for the difference from the ground location
     // provides a more consistent reading then trying to estimate a complete
     // ISA model atmosphere
-    float tempK = get_ground_temperature() + C_TO_KELVIN - ISA_LAPSE_RATE * altitude;
-    const float eas2tas_squared = SSL_AIR_DENSITY / (pressure / (ISA_GAS_CONSTANT * tempK));
+    //理想气体状态方程 PV=nRT 其中R=ISA_GAS_CONSTANT
+    //摩尔质量 M=m/n   m为质量 n摩尔   M的单位g/mol
+    //密度 ρ=m/V
+    //M=ρRT/P
+    float tempK = get_ground_temperature() + C_TO_KELVIN - ISA_LAPSE_RATE * altitude;//计算当前海拔下的温度，unit K ,273.15k=1C°
+    const float eas2tas_squared = SSL_AIR_DENSITY / (pressure / (ISA_GAS_CONSTANT * tempK));//为摩尔质量也叫相对分子质量
     if (!is_positive(eas2tas_squared)) {
         return 1.0f;
     }

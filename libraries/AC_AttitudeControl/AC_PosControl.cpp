@@ -1204,13 +1204,21 @@ float AC_PosControl::crosstrack_error() const
 ///
 
 // get_lean_angles_to_accel - convert roll, pitch lean angles to NE frame accelerations in cm/s/s
+//需要假设Z轴静止，即Z轴的空气动力刚好与重力平衡
 void AC_PosControl::accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss, float& roll_target, float& pitch_target) const
 {
     // rotate accelerations into body forward-right frame
+    //将NED坐标系下的水平加速度绕Z轴旋转，得到只有倾斜角，没有偏航角（ψ=0）的状态，绕Z轴旋转后的加速度如下
+
     const float accel_forward = accel_x_cmss * _ahrs.cos_yaw() + accel_y_cmss * _ahrs.sin_yaw();
     const float accel_right = -accel_x_cmss * _ahrs.sin_yaw() + accel_y_cmss * _ahrs.cos_yaw();
 
     // update angle targets that will be passed to stabilize controller
+    /*   ma_x=-F[cosψsinθcosφ+sinψsinθ]  ma_y=-F[sinψsinθcosφ-cosψsinθ]  mg=Fcosθcosφ(Z轴的升力与重力平衡)
+        由于ψ=0，得到ma_x=-Fsinθcosφ  ma_y=Fsinφ   mg=Fcosθcosφ
+        于是 a_x=-gtanθ  a_y=gtanφ/cosθ
+        反解得到 θ=atan(-a_x/g)  φ=atan(a_ycosθ/g)
+    */
     pitch_target = atanf(-accel_forward / (GRAVITY_MSS * 100.0f)) * (18000.0f / M_PI);
     float cos_pitch_target = cosf(pitch_target * M_PI / 18000.0f);
     roll_target = atanf(accel_right * cos_pitch_target / (GRAVITY_MSS * 100.0f)) * (18000.0f / M_PI);

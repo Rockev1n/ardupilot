@@ -362,6 +362,7 @@ bool limit_accel_xy(const Vector2f& vel, Vector2f& accel, float accel_max)
 }
 
 // sqrt_controller calculates the correction based on a proportional controller with piecewise sqrt sections to constrain second derivative.
+//经过改良的kp控制，当kp过大时，会呈现根号曲线，使响应变软
 float sqrt_controller(float error, float p, float second_ord_lim, float dt)
 {
     float correction_rate;

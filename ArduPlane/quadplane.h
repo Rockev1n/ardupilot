@@ -463,6 +463,12 @@ private:
 
     // time we last set the loiter target
     uint32_t last_loiter_ms;
+    /*
+        1.开始进场
+        2.若不是尾坐式垂起，在转换成VTOL前，会有“空气制动”阶段，使VTOL旋转以产生额外的制动
+        3.QRTL模式中，在此处（POSITION1），固定翼向VTOL过渡
+        4.QRTL模式中，此处（POSITION2）为VTOL着陆开始点
+    */
 
     enum position_control_state {
         QPOS_NONE = 0,
@@ -628,24 +634,23 @@ private:
     // additional options
     AP_Int32 options;
     enum {
-        OPTION_LEVEL_TRANSITION=(1<<0),
-        OPTION_ALLOW_FW_TAKEOFF=(1<<1),
-        OPTION_ALLOW_FW_LAND=(1<<2),
-        OPTION_RESPECT_TAKEOFF_FRAME=(1<<3),
-        OPTION_MISSION_LAND_FW_APPROACH=(1<<4),
-        OPTION_FS_QRTL=(1<<5),
+        OPTION_LEVEL_TRANSITION=(1<<0),   //保持机翼在 LEVEL_ROLL_LIMIT内，在过渡期间仅使用前进电机爬升
+        OPTION_ALLOW_FW_TAKEOFF=(1<<1), //如果此位未设置，则quadplane的起飞命令NAV_TAKEOFF将由NAV_VTOL代替
+        OPTION_ALLOW_FW_LAND=(1<<2),//如果未设置此位，则quadplane的NAV_LAND命令将由NAV_VTOL_LAND代替
+        OPTION_RESPECT_TAKEOFF_FRAME=(1<<3),//指令NAV_VTOL_TAKEOFF高度由指令的参考坐标系确定，而不是当前位置高度的增量
+        OPTION_MISSION_LAND_FW_APPROACH=(1<<4),//VTOL着陆时，使用固定翼方式到达QPOSTION1 
         OPTION_IDLE_GOV_MANUAL=(1<<6),
         OPTION_Q_ASSIST_FORCE_ENABLE=(1<<7),
-        OPTION_TAILSIT_Q_ASSIST_MOTORS_ONLY=(1<<8),
-        OPTION_AIRMODE=(1<<9),
+        OPTION_TAILSIT_Q_ASSIST_MOTORS_ONLY=(1<<8),//仅在tailsitter中，使用电机辅助，不使用控制面辅助
+        OPTION_AIRMODE=(1<<9),//通过AUX开关解锁时，启用airmode
         OPTION_DISARMED_TILT=(1<<10),
         OPTION_DELAY_ARMING=(1<<11),
         OPTION_DISABLE_SYNTHETIC_AIRSPEED_ASSIST=(1<<12),
         OPTION_DISABLE_GROUND_EFFECT_COMP=(1<<13),
         OPTION_INGORE_FW_ANGLE_LIMITS_IN_Q_MODES=(1<<14),
-        OPTION_THR_LANDING_CONTROL=(1<<15),
-        OPTION_DISABLE_APPROACH=(1<<16),
-        OPTION_REPOSITION_LANDING=(1<<17),
+        OPTION_THR_LANDING_CONTROL=(1<<15),//启用油门杆控制着陆速率
+        OPTION_DISABLE_APPROACH=(1<<16),//在 VTOL 着陆时禁用固定翼到达QPosition1和空气制动阶段
+        OPTION_REPOSITION_LANDING=(1<<17),//在自动着陆中启用飞行员控制的重新定位。重新定位时下降将暂停。
     };
 
     AP_Float takeoff_failure_scalar;

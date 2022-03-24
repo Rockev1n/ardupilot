@@ -1,8 +1,8 @@
 #pragma once
 
 /* slew rate limiting filter. This is used to prevent oscillation of a
- * controller by modifying the controllers output based on a maximum
- * slew rate
+  controller by modifying the controllers output based on a maximum
+  slew rate
 */
 
 #include <stdint.h>
@@ -12,7 +12,8 @@
 #define WINDOW_MS 300 // time in msec required for a half cycle of the slowest oscillation frequency expected
 #define MODIFIER_GAIN 1.5f // ratio of modifier reduction to slew rate exceedance ratio
 #define DERIVATIVE_CUTOFF_FREQ 25.0f
-
+//压摆率(Slew Rate)，也称转换速率，是运算放大器的一个重要参数。它反映放大器对输出电压转换的速率。换句话说，它显示运算放大器能够多快响应输入电平的快速变化。
+//一个限制信号最大变化速率的滤波器。
 class SlewLimiter {
 public:
     SlewLimiter(const float &slew_rate_max, const float &slew_rate_tau);
