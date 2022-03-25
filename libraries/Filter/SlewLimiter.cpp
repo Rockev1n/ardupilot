@@ -46,11 +46,11 @@ float SlewLimiter::modifier(float sample, float dt)//sample=P+D
     }
 
     // Calculate a low pass filtered slew rate
-    const float slew_rate = slew_filter.apply((sample - last_sample) / dt, dt);//(P+D)的微分经过低通滤波得到slew_rate
+    const float slew_rate = slew_filter.apply((sample - last_sample) / dt, dt);//(P+D)*_slew_limit_scale的微分经过低通滤波得到slew_rate
     last_sample = sample;
 
     uint32_t now_ms = AP_HAL::millis();
-    const float decay_alpha = fminf(dt, slew_rate_tau) / slew_rate_tau;//fminf(x,y)返回两个浮点参数中的较小者，将NaN视为缺失数据
+    const float decay_alpha = fminf(dt, slew_rate_tau) / slew_rate_tau;//fminf(x,y)返回两个浮点参数中的较小者，将NaN视为缺失数据，当dt<tau，decay_alpha=dt/tau,否则decay_alpha=1
 
     // Store a series of positive slew rate exceedance events   正压摆率超出的情况
     if (!_pos_event_stored && slew_rate > slew_rate_max) {

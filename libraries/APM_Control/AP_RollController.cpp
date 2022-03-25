@@ -228,14 +228,14 @@ int32_t AP_RollController::get_rate_out(float desired_rate, float scaler)
 int32_t AP_RollController::get_servo_out(int32_t angle_err, float scaler, bool disable_integrator, bool ground_mode)
 {
     if (gains.tau < 0.05f) {
-        gains.tau.set(0.05f);
+        gains.tau.set(0.05f);//gains.tau为滚转时间常数  在此文件的参数表里由详细说明
     }
 	
     // Calculate the desired roll rate (deg/sec) from the angle error
     angle_err_deg = angle_err * 0.01;
     float desired_rate = angle_err_deg/ gains.tau;//φ_dot_ref=φ_err/t
 
-    // Limit the demanded roll rate
+    // Limit the demanded roll rate   gains.rmax_pos为最大滚转速率 在此文件的参数表里由详细说明
     if (gains.rmax_pos && desired_rate < -gains.rmax_pos) {
         desired_rate = - gains.rmax_pos;
     } else if (gains.rmax_pos && desired_rate > gains.rmax_pos) {

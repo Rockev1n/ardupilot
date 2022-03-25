@@ -93,7 +93,7 @@ AC_PID::AC_PID(float initial_p, float initial_i, float initial_d, float initial_
 
     // slew limit scaler allows for plane to use degrees/sec slew
     // limit
-    _slew_limit_scale = 1;//slew_rate_limite 压摆率限制
+    _slew_limit_scale = 1;// 压摆率限制缩放
 }
 
 // set_dt - set time step in seconds
@@ -169,7 +169,7 @@ float AC_PID::update_all(float target, float measurement, bool limit)
     float D_out = (_derivative * _kd);
 
     // calculate slew limit modifier for P+D
-    _pid_info.Dmod = _slew_limiter.modifier((_pid_info.P + _pid_info.D) * _slew_limit_scale, _dt);
+    _pid_info.Dmod = _slew_limiter.modifier((_pid_info.P + _pid_info.D) * _slew_limit_scale, _dt);//_slew_limit_scale在AP_RollController类的构造函数中被初始化 45
     _pid_info.slew_rate = _slew_limiter.get_slew_rate();
 
     P_out *= _pid_info.Dmod;

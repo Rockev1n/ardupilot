@@ -914,6 +914,7 @@ void AC_AutoTune::control_attitude()
 
 // backup_gains_and_initialise - store current gains as originals
 //  called before tuning starts to backup original gains
+//备份增益和初始化
 void AC_AutoTune::backup_gains_and_initialise()
 {
     // initialise state because this is our first time
@@ -946,7 +947,7 @@ void AC_AutoTune::backup_gains_and_initialise()
     orig_roll_rd = attitude_control->get_rate_roll_pid().kD();
     orig_roll_rff = attitude_control->get_rate_roll_pid().ff();
     orig_roll_fltt = attitude_control->get_rate_roll_pid().filt_T_hz();
-    orig_roll_smax = attitude_control->get_rate_roll_pid().slew_limit();
+    orig_roll_smax = attitude_control->get_rate_roll_pid().slew_limit();//slew_limit()返回_slew_rate_limit,slew_rate_limit在AP_PitchController.h文件中，创建rate_pid被初始化
     orig_roll_sp = attitude_control->get_angle_roll_p().kP();
     orig_roll_accel = attitude_control->get_accel_roll_max();
     tune_roll_rp = attitude_control->get_rate_roll_pid().kP();
@@ -1186,7 +1187,7 @@ void AC_AutoTune::save_tuning_gains()
         attitude_control->get_rate_roll_pid().kD(tune_roll_rd);
         attitude_control->get_rate_roll_pid().ff(orig_roll_rff);
         attitude_control->get_rate_roll_pid().filt_T_hz(orig_roll_fltt);
-        attitude_control->get_rate_roll_pid().slew_limit(orig_roll_smax);
+        attitude_control->get_rate_roll_pid().slew_limit(orig_roll_smax);//_slew_rate_limit=abs(orig_roll_smax)
         attitude_control->get_rate_roll_pid().save_gains();
 
         // stabilize roll
